@@ -134,8 +134,18 @@ namespace UXF
                     .Cast<object>()
                     .ToList();
 
-                string req = MiniJSON.Json.Serialize(dataList);
-                DDB_BatchWriteItem(tableName, req, gameObject.name);
+                if(dataList.Count <= 25) {
+                    string req = MiniJSON.Json.Serialize(dataList);
+                    DDB_BatchWriteItem(tableName, req, gameObject.name);
+                } else {
+                    // BatchWriteItem accepts 25 items at most
+                    while(dataList.Any()) {
+                        var dataListChunk = dataList.Take(25).ToList();
+                        dataList = dataList.Skip(25).ToList();
+                        string req = MiniJSON.Json.Serialize(dataListChunk);
+                        DDB_BatchWriteItem(tableName, req, gameObject.name);
+                    }
+                }                    
                 return string.Format("dynamodb:{0}:{1}", tableName, primaryKeyValue);
             }
             else
